@@ -10,6 +10,14 @@ class Formregistro extends StatefulWidget {
 class _FormregistroState extends State<Formregistro> {
 
 
+  final TextEditingController _nombreController = TextEditingController();
+  final TextEditingController _apellidosController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _contraseniaController = TextEditingController();
+
+  final List<String> _dias = List.generate(31, (index) => (index + 1).toString());
+  final List<String> _meses = List.generate(12, (index) => (index + 1).toString());
+  final List<String> _anios = List.generate(100, (index) => (index + 1920).toString());
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +40,11 @@ class _FormregistroState extends State<Formregistro> {
               
               SizedBox(height: 20),
               TextFormField(
+                controller: _nombreController,
+                style: TextStyle(color: Colors.white),
+                autocorrect: true,
                 decoration: InputDecoration(
+                  focusColor: Colors.white,
                   labelText: 'Nombre',
                   labelStyle: TextStyle(color: Colors.white70),
                   filled: true,
@@ -40,10 +52,13 @@ class _FormregistroState extends State<Formregistro> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
+
                 ),
               ),
               SizedBox(height: 15),
               TextFormField(
+                controller: _apellidosController,
+                style: TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   labelText: 'Apellidos',
                   labelStyle: TextStyle(color: Colors.white70),
@@ -57,19 +72,21 @@ class _FormregistroState extends State<Formregistro> {
               SizedBox(height: 20),
               Text(
                 'Fecha de nacimiento',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.white, fontSize: 15),
               ),
+              SizedBox(height: 5,),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Expanded(child: _buildDropdown(['Día'])),
-                  SizedBox(width: 10),
-                  Expanded(child: _buildDropdown(['Mes'])),
-                  SizedBox(width: 10),
-                  Expanded(child: _buildDropdown(['Año'])),
+                  CustomDropdown(items: _dias, hint: 'Día', width: 80,),
+                  CustomDropdown(items: _meses, hint: 'Mes',width: 80,),
+                  CustomDropdown(items: _anios, hint: 'Año', width: 95,),
                 ],
               ),
               SizedBox(height: 19),
               TextFormField(
+                controller: _emailController,
+                style: TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   labelText: 'Correo electrónico',
                   labelStyle: TextStyle(color: Colors.white70),
@@ -82,6 +99,8 @@ class _FormregistroState extends State<Formregistro> {
               ),
               SizedBox(height: 15),
               TextFormField(
+                controller: _contraseniaController,
+                style: TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   labelText: 'Contraseña',
                   labelStyle: TextStyle(color: Colors.white70),
@@ -91,7 +110,6 @@ class _FormregistroState extends State<Formregistro> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                obscureText: true,
               ),
               SizedBox(height: 20),
               SizedBox(
@@ -136,4 +154,47 @@ class _FormregistroState extends State<Formregistro> {
     );
   }
 
+}
+
+
+
+class CustomDropdown extends StatelessWidget {
+  final List<String> items;
+  final String hint;
+  final double width;
+
+  const CustomDropdown({
+    Key? key,
+    required this.items,
+    required this.hint,
+    this.width = 95, // Ancho por defecto
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width, // Ancho personalizado
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.black, // Fondo negro
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonFormField<String>(
+        decoration: const InputDecoration(border: InputBorder.none),
+        dropdownColor: Colors.black, // Color del menú desplegable
+        icon: const Icon(Icons.arrow_drop_down, color: Colors.white), // Ícono de desplegable
+        style: const TextStyle(color: Colors.white, fontSize: 14), // Texto en blanco
+        hint: Text(hint, style: const TextStyle(color: Colors.white70)), // Texto de sugerencia
+        items: items
+            .map((item) => DropdownMenuItem(
+          value: item,
+          child: Text(item, style: const TextStyle(color: Colors.white)),
+        ))
+            .toList(),
+        onChanged: (value) {
+          print(value);
+        },
+      ),
+    );
+  }
 }
