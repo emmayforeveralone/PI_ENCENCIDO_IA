@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pi2025/MenuUsuarios/inicio.dart';
 import 'package:pi2025/Registro/formRegistro.dart';
 
 void main() {
@@ -14,7 +15,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
 
-      home: Formregistro()
+      home: HomeScreen()
     );
   }
 }
