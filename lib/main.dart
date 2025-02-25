@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:pi2025/AgregarUsuario/agregarUsuario.dart';
 import 'package:pi2025/MenuUsuarios/home_screen.dart';
+import 'package:pi2025/Registro/formRegistro.dart';
 
 
 void main() {
