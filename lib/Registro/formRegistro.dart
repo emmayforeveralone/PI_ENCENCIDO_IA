@@ -54,6 +54,7 @@ class _FormregistroState extends State<Formregistro> {
                   ),
 
                 ),
+
               ),
               SizedBox(height: 15),
               TextFormField(

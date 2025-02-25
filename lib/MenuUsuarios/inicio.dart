@@ -1,62 +1,56 @@
 import 'package:flutter/material.dart';
-import 'package:pi2025/MenuUsuarios/usuarios.dart';
-import 'bloqueados.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:pi2025/FaceLogica/face_recognition.dart'; // Importamos el servicio de reconocimiento facial
 
-
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+class InicioScreen extends StatefulWidget {
+  const InicioScreen({Key? key}) : super(key: key);
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _InicioScreenState createState() => _InicioScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0; // Índice de la pantalla actual
+class _InicioScreenState extends State<InicioScreen> {
+  File? _image;
+  final FaceRecognitionService _faceRecognitionService = FaceRecognitionService();
 
-  // Lista de pantallas
-  final List<Widget> _screens = [
-    const InicioScreen(),
-    const UsuariosScreen(),
-    const BloqueadosScreen(),
-  ];
+  // Función para tomar la foto y analizar el rostro
+  Future<void> _takePicture() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+
+      // Detectar rostro en la imagen
+      bool hasFace = await _faceRecognitionService.detectFace(_image!);
+
+      if (hasFace) {
+        print("Rostro detectado.");
+        _showMessage("Rostro detectado correctamente.");
+      } else {
+        print("No se detectó ningún rostro.");
+        _showMessage("No se detectó un rostro. Inténtalo de nuevo.");
+      }
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_selectedIndex], // Muestra la pantalla seleccionada
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.black, // Fondo negro
-        selectedItemColor: Colors.blue, // Color al seleccionar
-        unselectedItemColor: Colors.white, // Color cuando no está seleccionado
-        currentIndex: _selectedIndex, // Índice de la pantalla actual
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Usuarios',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.block),
-            label: 'Bloqueados',
-          ),
-        ],
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
-}
 
-class InicioScreen extends StatelessWidget {
-  const InicioScreen({Key? key}) : super(key: key);
+  @override
+  void dispose() {
+    _faceRecognitionService.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,15 +60,21 @@ class InicioScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircleAvatar(
-              radius: 50, // Tamaño de la imagen circular
-              backgroundImage: NetworkImage(
-                'https://www.w3schools.com/howto/img_avatar.png', // Imagen de prueba
+            InkWell(
+              onTap: _takePicture,
+              borderRadius: BorderRadius.circular(50), // Hacemos el botón circular
+              child: CircleAvatar(
+                radius: 50, // Tamaño de la imagen circular
+                backgroundColor: Colors.blue,
+                backgroundImage: _image != null ? FileImage(_image!) : null, // Mostramos la imagen si hay una
+                child: _image == null
+                    ? Icon(Icons.camera_alt, size: 40, color: Colors.white) // Icono si no hay imagen
+                    : null,
               ),
             ),
             const SizedBox(height: 20),
             const Text(
-              'Información del Usuario:',
+              'Información del Usuario: ',
               style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
@@ -98,5 +98,3 @@ class InicioScreen extends StatelessWidget {
     );
   }
 }
-
-
