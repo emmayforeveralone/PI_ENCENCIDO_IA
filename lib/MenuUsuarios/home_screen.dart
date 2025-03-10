@@ -3,7 +3,6 @@ import 'package:pi2025/MenuUsuarios/usuarios.dart';
 import 'bloqueados.dart';
 import 'inicio.dart';
 
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -30,7 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex], // Muestra la pantalla seleccionada
+      body: IndexedStack(
+        index: _selectedIndex, // Mantiene el estado de cada pantalla
+        children: _screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.black, // Fondo negro
         selectedItemColor: Colors.blue, // Color al seleccionar
@@ -55,5 +57,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
-

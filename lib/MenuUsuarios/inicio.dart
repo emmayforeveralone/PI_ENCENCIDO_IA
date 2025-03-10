@@ -55,11 +55,17 @@ class _InicioScreenState extends State<InicioScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[900], // Fondo oscuro
+      backgroundColor: Colors.grey[850], // Fondo oscuro
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
+            SizedBox(height: 60),
+            Image.asset(
+              'assets/images/FondoFace.png',
+              width: 800, // Ancho del logo
+              height: 250, // Alto del logo
+            ),
             InkWell(
               onTap: _takePicture,
               borderRadius: BorderRadius.circular(50), // Hacemos el botón circular

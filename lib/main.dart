@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       title: 'FaceLock',
       debugShowCheckedModeBanner: false,
 
-      home: HomeScreen(),
+      home: Formregistro(),
     );
   }
 }
