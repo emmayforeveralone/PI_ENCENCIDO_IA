@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "540322584393",
+    "project_id": "pi-sistema-de-ia",
+    "storage_bucket": "pi-sistema-de-ia.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:540322584393:android:de5ae7f3166e90082d2c98",
+        "android_client_info": {
+          "package_name": "com.uptap.facelock.pi2025"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCF7MR35A7m0ZHrj3MCUzW0nESuEkzk9Bs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
