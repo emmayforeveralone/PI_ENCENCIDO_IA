@@ -19,14 +19,9 @@ class _FormregistroState extends State<Formregistro> {
   final TextEditingController _apellidosController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
+  final TextEditingController _fechaNacimientoController = TextEditingController();
 
-  String? _selectedDia;
-  String? _selectedMes;
-  String? _selectedAnio;
-
-  final List<String> _dias = List.generate(31, (index) => (index + 1).toString());
-  final List<String> _meses = List.generate(12, (index) => (index + 1).toString());
-  final List<String> _anios = List.generate(100, (index) => (index + 1920).toString());
+  final _formKey = GlobalKey<FormState>();
 
   Future<void> _registrarUsuario() async {
     try {
@@ -38,10 +33,11 @@ class _FormregistroState extends State<Formregistro> {
 
       // Guardar datos adicionales en Firestore
       await _firestore.collection('usuarios').doc(userCredential.user!.uid).set({
-        'nombre': _nombreController.text.trim(),
-        'apellidos': _apellidosController.text.trim(),
-        'email': _emailController.text.trim(),
-        'fecha_nacimiento': '$_selectedDia/$_selectedMes/$_selectedAnio',
+        'nombre': _nombreController.text,
+        'apellidos': _apellidosController.text,
+        'email': _emailController.text,
+        'fecha_nacimiento': _fechaNacimientoController.text,
+        'password': _passController.text,
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -73,9 +69,10 @@ class _FormregistroState extends State<Formregistro> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[850],
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(10.0),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -87,7 +84,6 @@ class _FormregistroState extends State<Formregistro> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              
               SizedBox(height: 20),
               TextFormField(
                 controller: _nombreController,
@@ -102,9 +98,8 @@ class _FormregistroState extends State<Formregistro> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-
                 ),
-
+                validator: (value) => value!.isEmpty ? "Ingrese su nombre" : null,
               ),
               SizedBox(height: 15),
               TextFormField(
@@ -119,41 +114,37 @@ class _FormregistroState extends State<Formregistro> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
+                validator: (value) => value!.isEmpty ? "Ingrese sus apellidos" : null,
               ),
               SizedBox(height: 20),
               Text(
                 'Fecha de nacimiento',
                 style: TextStyle(color: Colors.white, fontSize: 15),
               ),
-              SizedBox(height: 5,),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  CustomDropdown(
-                    items: _dias,
-                    hint: 'Día',
-                    width: 80,
-                    onChanged: (value) {
-                      setState(() => _selectedDia = value);
-                    },
+              SizedBox(height: 7),
+              TextFormField(
+                controller: _fechaNacimientoController,
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Fecha de Nacimiento (DD-MM-YYYY)",
+                  labelStyle: TextStyle(color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.black54,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  CustomDropdown(
-                    items: _meses,
-                    hint: 'Mes',
-                    width: 80,
-                    onChanged: (value) {
-                      setState(() => _selectedMes = value);
-                    },
-                  ),
-                  CustomDropdown(
-                    items: _anios,
-                    hint: 'Año',
-                    width: 95,
-                    onChanged: (value) {
-                      setState(() => _selectedAnio = value);
-                    },
-                  ),
-                ],
+                ),
+                keyboardType: TextInputType.datetime,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return "Ingrese su fecha de nacimiento";
+                  }
+                  final regex = RegExp(r'^\d{2}-\d{2}-\d{4}$');
+                  if (!regex.hasMatch(value)) {
+                    return "Formato inválido (DD-MM-YYYY)";
+                  }
+                  return null;
+                },
               ),
               SizedBox(height: 19),
               TextFormField(
@@ -168,6 +159,7 @@ class _FormregistroState extends State<Formregistro> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
+                validator: (value) => value!.isEmpty ? "Ingrese su correo" : null,
               ),
               SizedBox(height: 15),
               TextFormField(
@@ -183,12 +175,21 @@ class _FormregistroState extends State<Formregistro> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
+                validator: (value) => value!.isEmpty ? "Ingrese su contraseña" : null,
               ),
               SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed:  _registrarUsuario,
+                  onPressed:  () {
+                    if (_formKey.currentState!.validate()) {
+                      _registrarUsuario();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Por favor, complete todos los campos correctamente')),
+                      );
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                     backgroundColor: Colors.blue.shade900,

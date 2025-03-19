@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class FormUsuarios extends StatefulWidget {
@@ -13,16 +15,18 @@ class _FormUsuariosState extends State<FormUsuarios> {
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _apellidosController = TextEditingController();
 
-
-  final List<String> _dias = List.generate(31, (index) => (index + 1).toString());
-  final List<String> _meses = List.generate(12, (index) => (index + 1).toString());
-  final List<String> _anios = List.generate(100, (index) => (index + 1920).toString());
-  final List<String> _items = ["1 Dia", "1 Semana", "1 Mes", "1 Año"];
+  List listaSeleccion = [
+    "1 Dia",
+    "1 Semana",
+    "1 Mes",
+    "1 Año",
+  ];
+  var selectedTiempo;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black87,
+      backgroundColor: Colors.grey[850],
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(10.0),
@@ -52,9 +56,7 @@ class _FormUsuariosState extends State<FormUsuarios> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-
                 ),
-
               ),
               SizedBox(height: 15),
               TextFormField(
@@ -70,38 +72,58 @@ class _FormUsuariosState extends State<FormUsuarios> {
                   ),
                 ),
               ),
-              SizedBox(height: 20),
-              Text(
-                'Fecha de nacimiento',
-                style: TextStyle(color: Colors.white, fontSize: 17  ),
-              ),
-              SizedBox(height: 5),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  CustomDropdown(items: _dias, hint: 'Día', width: 80,),
-                  CustomDropdown(items: _meses, hint: 'Mes',width: 80,),
-                  CustomDropdown(items: _anios, hint: 'Año', width: 95,),
-                ],
-              ),
               SizedBox(height: 19),
               Text(
                 'Tiempo de actividad',
                 style: TextStyle(color: Colors.white, fontSize: 17),
               ),
               SizedBox(height: 5),
-              CustomDropdown(items: _items, hint: "Tiempo de actividad", width: 200),
-
+              DropdownButtonFormField(
+                dropdownColor: Colors.grey[850],
+                style: TextStyle(color: Colors.white),
+                validator: (value) {
+                  if (value == null) {
+                    return 'Este campo es obligatorio';
+                  }
+                  return null;
+                },
+                menuMaxHeight: 250.0,
+                // ignore: prefer_const_constructors
+                decoration: InputDecoration(
+                  labelStyle: TextStyle(color: Colors.white70),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  icon: const Icon(
+                    Icons.group,
+                    color: Color.fromRGBO(255, 255, 255, 1),
+                  ),
+                  labelText: "Seleccione una opcion",
+                ),
+                items: listaSeleccion.map((name) {
+                  return DropdownMenuItem(
+                    value: name,
+                    child: Text(name),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  selectedTiempo = value;
+                },
+              ),
               SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: _guardarUsuario,
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 15),
-                    backgroundColor: Colors.blue.shade900,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 50, vertical: 15),
+                      backgroundColor: Colors.blue.shade900,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10))
                   ),
-                  child: Text('Enviar', style: TextStyle(fontSize: 16),selectionColor: Colors.white,),
+                  child: const Text(
+                      'Ingresar', style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
@@ -111,71 +133,36 @@ class _FormUsuariosState extends State<FormUsuarios> {
     );
   }
 
+  Future<void> _guardarUsuario() async {
+    User? usuarioActual = FirebaseAuth.instance.currentUser;
 
-  Widget _buildDropdown(List<String> items) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DropdownButton<String>(
-        isExpanded: true,
-        value: items.first,
-        items: items.map((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value, style: TextStyle(color: Colors.white)),
-          );
-        }).toList(),
-        onChanged: (String? newValue) {},
-        dropdownColor: Colors.black54,
-        underline: SizedBox(),
-      ),
-    );
-  }
+    if (usuarioActual == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No hay usuario autenticado')),
+      );
+      return;
+    }
 
-}
+    try {
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(usuarioActual.uid)
+          .collection('usuariosAdicionales')
+          .add({
+        'nombre': _nombreController.text,
+        'apellidos': _apellidosController.text,
+        'Tiempo de actividad': selectedTiempo,
+        'creadoEn': Timestamp.now(),
+      });
 
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Usuario agregado con éxito')),
+      );
 
-
-class CustomDropdown extends StatelessWidget {
-  final List<String> items;
-  final String hint;
-  final double width;
-
-  const CustomDropdown({
-    Key? key,
-    required this.items,
-    required this.hint,
-    this.width = 95, // Ancho por defecto
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width, // Ancho personalizado
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.black, // Fondo negro
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DropdownButtonFormField<String>(
-        decoration: const InputDecoration(border: InputBorder.none),
-        dropdownColor: Colors.black, // Color del menú desplegable
-        icon: const Icon(Icons.arrow_drop_down, color: Colors.white), // Ícono de desplegable
-        style: const TextStyle(color: Colors.white, fontSize: 14), // Texto en blanco
-        hint: Text(hint, style: const TextStyle(color: Colors.white70)), // Texto de sugerencia
-        items: items
-            .map((item) => DropdownMenuItem(
-          value: item,
-          child: Text(item, style: const TextStyle(color: Colors.white)),
-        ))
-            .toList(),
-        onChanged: (value) {
-          print(value);
-        },
-      ),
-    );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar: $e')),
+      );
+    }
   }
 }
