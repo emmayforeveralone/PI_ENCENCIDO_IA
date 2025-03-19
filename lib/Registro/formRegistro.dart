@@ -1,4 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import '../MenuUsuarios/home_screen.dart';
 
 class Formregistro extends StatefulWidget {
   const Formregistro({super.key});
@@ -8,21 +12,67 @@ class Formregistro extends StatefulWidget {
 }
 
 class _FormregistroState extends State<Formregistro> {
-
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _apellidosController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _contraseniaController = TextEditingController();
+  final TextEditingController _passController = TextEditingController();
+
+  String? _selectedDia;
+  String? _selectedMes;
+  String? _selectedAnio;
 
   final List<String> _dias = List.generate(31, (index) => (index + 1).toString());
   final List<String> _meses = List.generate(12, (index) => (index + 1).toString());
   final List<String> _anios = List.generate(100, (index) => (index + 1920).toString());
 
+  Future<void> _registrarUsuario() async {
+    try {
+      // Registrar usuario en Firebase Authentication
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passController.text.trim(),
+      );
+
+      // Guardar datos adicionales en Firestore
+      await _firestore.collection('usuarios').doc(userCredential.user!.uid).set({
+        'nombre': _nombreController.text.trim(),
+        'apellidos': _apellidosController.text.trim(),
+        'email': _emailController.text.trim(),
+        'fecha_nacimiento': '$_selectedDia/$_selectedMes/$_selectedAnio',
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registro exitoso')),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+
+      // Redirigir a otra pantalla o limpiar los campos
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = "Ocurrió un error";
+
+      if (e.code == 'email-already-in-use') {
+        errorMessage = 'El correo ya está registrado';
+      } else if (e.code == 'weak-password') {
+        errorMessage = 'La contraseña es muy débil';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black87,
+      backgroundColor: Colors.grey[850],
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(10.0),
@@ -79,9 +129,30 @@ class _FormregistroState extends State<Formregistro> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  CustomDropdown(items: _dias, hint: 'Día', width: 80,),
-                  CustomDropdown(items: _meses, hint: 'Mes',width: 80,),
-                  CustomDropdown(items: _anios, hint: 'Año', width: 95,),
+                  CustomDropdown(
+                    items: _dias,
+                    hint: 'Día',
+                    width: 80,
+                    onChanged: (value) {
+                      setState(() => _selectedDia = value);
+                    },
+                  ),
+                  CustomDropdown(
+                    items: _meses,
+                    hint: 'Mes',
+                    width: 80,
+                    onChanged: (value) {
+                      setState(() => _selectedMes = value);
+                    },
+                  ),
+                  CustomDropdown(
+                    items: _anios,
+                    hint: 'Año',
+                    width: 95,
+                    onChanged: (value) {
+                      setState(() => _selectedAnio = value);
+                    },
+                  ),
                 ],
               ),
               SizedBox(height: 19),
@@ -100,8 +171,9 @@ class _FormregistroState extends State<Formregistro> {
               ),
               SizedBox(height: 15),
               TextFormField(
-                controller: _contraseniaController,
+                controller: _passController,
                 style: TextStyle(color: Colors.white),
+                obscureText: true,
                 decoration: InputDecoration(
                   labelText: 'Contraseña',
                   labelStyle: TextStyle(color: Colors.white70),
@@ -116,12 +188,13 @@ class _FormregistroState extends State<Formregistro> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed:  _registrarUsuario,
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                     backgroundColor: Colors.blue.shade900,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
                   ),
-                  child: Text('Enviar', style: TextStyle(fontSize: 16),selectionColor: Colors.white,),
+                  child: const Text('Ingresar', style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
@@ -145,7 +218,7 @@ class CustomDropdown extends StatelessWidget {
     Key? key,
     required this.items,
     required this.hint,
-    this.width = 95, // Ancho por defecto
+    this.width = 95, required Null Function(dynamic value) onChanged, // Ancho por defecto
   }) : super(key: key);
 
   @override
