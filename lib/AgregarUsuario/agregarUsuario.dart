@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:pi2025/MenuUsuarios/home_screen.dart';
 
 class FormUsuarios extends StatefulWidget {
   const FormUsuarios({super.key});
@@ -157,6 +158,11 @@ class _FormUsuariosState extends State<FormUsuarios> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Usuario agregado con éxito')),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
       );
 
     } catch (e) {
