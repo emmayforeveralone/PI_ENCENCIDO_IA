@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-
-import 'package:pi2025/AgregarUsuario/agregarUsuario.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart'; // Para manejar fechas
 
 class BloqueadosScreen extends StatefulWidget {
   const BloqueadosScreen({Key? key}) : super(key: key);
@@ -12,22 +11,59 @@ class BloqueadosScreen extends StatefulWidget {
 }
 
 class _BloqueadosScreenState extends State<BloqueadosScreen> {
-  // Lista de usuarios bloqueados sin nombres
-  final List<Map<String, dynamic>> usuarios = [
-    {"activo": false, "imagen": null},
-    {"activo": true, "imagen": null},
-    {"activo": false, "imagen": null},
-  ];
+  // Lista de usuarios bloqueados (se llenará con datos de Firestore)
+  List<Map<String, dynamic>> usuarios = [];
 
-  // Método para tomar foto y asignarla a un usuario específico
-  Future<void> _tomarFoto(int index) async {
-    final picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.camera);
+  @override
+  void initState() {
+    super.initState();
+    _cargarUsuariosAdicionales();
+  }
 
-    if (image != null) {
+  // Cargar usuarios adicionales desde Firestore
+  Future<void> _cargarUsuariosAdicionales() async {
+    User? usuarioActual = FirebaseAuth.instance.currentUser;
+
+    if (usuarioActual != null) {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(usuarioActual.uid)
+          .collection('usuariosAdicionales')
+          .get();
+
       setState(() {
-        usuarios[index]["imagen"] = File(image.path);
+        usuarios = querySnapshot.docs.map((doc) {
+          // Calcular si el tiempo de actividad está activo
+          bool activo = _esActivo(doc['Tiempo de actividad'], doc['creadoEn']);
+
+          return {
+            "nombre": doc['nombre'],
+            "apellidos": doc['apellidos'],
+            "activo": activo, // Estado inicial de bloqueo
+            "tiempoActividad": doc['Tiempo de actividad'], // Tiempo de actividad
+            "creadoEn": doc['creadoEn'], // Fecha de creación
+          };
+        }).toList();
       });
+    }
+  }
+
+  // Verificar si el tiempo de actividad está activo
+  bool _esActivo(String tiempoActividad, Timestamp creadoEn) {
+    DateTime ahora = DateTime.now();
+    DateTime fechaCreacion = creadoEn.toDate();
+
+    switch (tiempoActividad) {
+      case "1 Dia":
+        return ahora.isBefore(fechaCreacion.add(const Duration(days: 1)));
+      case "1 Semana":
+        return ahora.isBefore(fechaCreacion.add(const Duration(days: 7)));
+      case "1 Mes":
+        return ahora.isBefore(fechaCreacion.add(const Duration(days: 30)));
+      case "1 Año":
+        return ahora.isBefore(fechaCreacion.add(const Duration(days: 365)));
+      default:
+        return false; // Si no hay tiempo de actividad, se desactiva
     }
   }
 
@@ -40,11 +76,11 @@ class _BloqueadosScreenState extends State<BloqueadosScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Image.asset(
               'assets/images/FondoFace.png',
-              width: 800, // Ancho del logo
-              height: 250, // Alto del logo
+              width: 800,
+              height: 250,
             ),
             const Text(
               "Usuarios Bloqueados",
@@ -82,18 +118,14 @@ class _BloqueadosScreenState extends State<BloqueadosScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => FormUsuarios()));
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+              // Mostrar nombre y apellidos del usuario adicional
+              Text(
+                "${usuarios[index]["nombre"]} ${usuarios[index]["apellidos"]}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                child: const Text("Ver información"),
               ),
               const SizedBox(height: 10),
               Row(
@@ -121,29 +153,17 @@ class _BloqueadosScreenState extends State<BloqueadosScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+              Text(
+                "Tiempo: ${usuarios[index]["tiempoActividad"]}",
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "Fecha de creación: ${DateFormat('dd/MM/yyyy').format(usuarios[index]["creadoEn"].toDate())}",
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
             ],
-          ),
-          GestureDetector(
-            onTap: () => _tomarFoto(index),
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.grey[700],
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: usuarios[index]["imagen"] == null
-                  ? const Icon(Icons.camera_alt, color: Colors.white, size: 40)
-                  : ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: Image.file(
-                  usuarios[index]["imagen"],
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
           ),
         ],
       ),
